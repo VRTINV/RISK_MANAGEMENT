@@ -46,6 +46,7 @@ def getPosition():
     connect()
     for p in mt5.positions_get(symbol=A):
         current=p.type  
+    disconnect()
     if current==mt5.POSITION_TYPE_BUY:
         return 1 
     if current==mt5.POSITION_TYPE_SELL:
@@ -160,4 +161,5 @@ while True:
             print("Failed to modify order:", result.retcode)
         else:
             print("Order modified successfully")
+
         disconnect()
