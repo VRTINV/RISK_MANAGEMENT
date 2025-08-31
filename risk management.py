@@ -3,7 +3,8 @@ import numpy as np
 import pandas as pd
 import random as rd
 import xgboost
-A="BTCUSD"
+
+A="US100.cash"
 
 
 
@@ -46,7 +47,6 @@ def getPosition():
     connect()
     for p in mt5.positions_get(symbol=A):
         current=p.type  
-    disconnect()
     if current==mt5.POSITION_TYPE_BUY:
         return 1 
     if current==mt5.POSITION_TYPE_SELL:
@@ -109,57 +109,60 @@ def genDATA(U):
     return data
 
 while True:
-    if isNewTrade(ticket):
-        print(f"NEW TRADE DETECTED")
-        ticket=getTicket()
-        SIGNAL=getPosition()
-        H=25
-        D=24
-        #model
-        connect()
-        PRICES=get_close(250)
-        disconnect()
-        
-        X=[]
-        Y=[]
-        
-        for h in range(250-H-D):
-            X.append(genDATA(PRICES[h:h+H]))
-            Y.append(PRICES[h+H:h+H+D])
+    try:
+        if isNewTrade(ticket):
+            print(f"NEW TRADE DETECTED")
+            ticket=getTicket()
+            SIGNAL=getPosition()
+            H=25
+            D=24
+            #model
+            connect()
+            PRICES=get_close(250)
+            disconnect()
             
-        XRUN=[]
-        hrun=250-H-D
-        XRUN.append(genDATA(PRICES[hrun:hrun+H]))
-        
-        model=xgboost.XGBRegressor(missing=np.inf)
-        
-        model.fit(X,Y)
-        
-        YRUN=model.predict(XRUN)[0]
-
-
-        delta = max (abs(PRICES[-1]-max(YRUN)),abs(PRICES[-1]- min(YRUN)))
-
-        SL=PRICES[-1]-SIGNAL*delta
-        TP=PRICES[-1]+SIGNAL*delta
-        
-        
-        
-        sl=1*SL
-        tp=1*TP
-        connect()
-        request = {
-            "action": mt5.TRADE_ACTION_SLTP,
-            "symbol": A,
-            "position": ticket,
-            "sl": sl,
-            "tp": tp,
-                }
-        
-        result = mt5.order_send(request)
-        if result.retcode != mt5.TRADE_RETCODE_DONE:
-            print("Failed to modify order:", result.retcode)
-        else:
-            print("Order modified successfully")
-
-        disconnect()
+            X=[]
+            Y=[]
+            
+            for h in range(250-H-D):
+                X.append(genDATA(PRICES[h:h+H]))
+                Y.append(PRICES[h+H:h+H+D])
+                
+            XRUN=[]
+            hrun=250-H-D
+            XRUN.append(genDATA(PRICES[hrun:hrun+H]))
+            
+            model=xgboost.XGBRegressor(missing=np.inf)
+            
+            model.fit(X,Y)
+            
+            YRUN=model.predict(XRUN)[0]
+    
+    
+            delta = max (abs(PRICES[-1]-max(YRUN)),abs(PRICES[-1]- min(YRUN)))
+    
+            SL=PRICES[-1]-1*SIGNAL*delta
+            TP=PRICES[-1]+1*SIGNAL*delta
+            
+            
+            
+            sl=SL
+            tp=TP
+            connect()
+            request = {
+                "action": mt5.TRADE_ACTION_SLTP,
+                "symbol": A,
+                "position": ticket,
+                "sl": sl,
+                "tp": tp,
+                    }
+            
+            result = mt5.order_send(request)
+            if result.retcode != mt5.TRADE_RETCODE_DONE:
+                print("Failed to modify order:", result.retcode)
+            else:
+                print("Order modified successfully")
+            disconnect()
+    except:
+        ticket=-1
+        print("NO ORDER")
