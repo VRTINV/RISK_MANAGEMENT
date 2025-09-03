@@ -11,10 +11,17 @@ A="US100.cash"
 
 
 def get_close(N):
-    rates = mt5.copy_rates_from_pos(A, mt5.TIMEFRAME_H1, 1, N)
+    rates = mt5.copy_rates_from_pos(A, mt5.TIMEFRAME_H1, 0, N)
     ticks_frame = pd.DataFrame(rates)
     #print(ticks_frame)
     PRICE_array=ticks_frame['close'].to_numpy()
+    return PRICE_array
+
+def get_price():
+    rates = mt5.copy_rates_from_pos(A, mt5.TIMEFRAME_H1, 0, 1)
+    ticks_frame = pd.DataFrame(rates)
+    #print(ticks_frame)
+    PRICE_array=ticks_frame['close'].to_numpy()[0]
     return PRICE_array
 
 def disconnect():
@@ -140,9 +147,13 @@ while True:
     
     
             delta = max (abs(PRICES[-1]-max(YRUN)),abs(PRICES[-1]- min(YRUN)))
-    
-            SL=PRICES[-1]-1*SIGNAL*delta
-            TP=PRICES[-1]+1*SIGNAL*delta
+            
+            connect()
+            price=get_price()
+            disconnect()
+            
+            SL=price-0.1*SIGNAL*delta
+            TP=price+0.25*SIGNAL*delta
             
             
             
